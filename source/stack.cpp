@@ -36,7 +36,7 @@ static int OptimalExpansion(Stack *stack)
 {
     if(stack->size == stack->capacity)
     {
-        ASSERT(stack->capacity < ULLONG_MAX, return EXIT_FAILURE);
+        ASSERT(stack->capacity <= ULLONG_MAX / 2, return EXIT_FAILURE);
 
         data_t *temp_ptr = (data_t *)realloc(stack->data, sizeof(data_t) * stack->capacity * 2);
         ASSERT(temp_ptr, return EXIT_FAILURE);
