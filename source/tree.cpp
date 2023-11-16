@@ -279,7 +279,8 @@ static Node *ReadNode(FILE *file, size_t *counter)
             char data[MAX_LEN] = {};
 
             fscanf(file, " %c", &ch);
-            ASSERT(ch == '<', (*counter) = ULLONG_MAX; return NULL);
+            ASSERT(ch == '<', (*counter) = ULLONG_MAX;
+                              return NULL);
 
             fscanf(file, " %[^>]%*c", data);
 
@@ -287,7 +288,10 @@ static Node *ReadNode(FILE *file, size_t *counter)
             Node *right = ReadNode(file, counter);
 
             fscanf(file, " %c", &ch);
-            ASSERT(ch == ')', (*counter) = ULLONG_MAX);
+            ASSERT(ch == ')', (*counter) = ULLONG_MAX;
+                              free(left);
+                              free(right);
+                              return NULL);
 
             return NodeCtor(data, left, right);
         }
@@ -331,7 +335,8 @@ static void TreeSizeVer(Tree *const tree, Node *const tree_node, size_t *counter
 
 int TreeVer(Tree *const tree)
 {
-    ASSERT(tree && tree->root, return EXIT_FAILURE);
+    ASSERT(tree && tree->root      , return EXIT_FAILURE);
+    ASSERT(tree->size != ULLONG_MAX, return EXIT_FAILURE);
 
     size_t counter = 0;
     TreeSizeVer(tree, tree->root, &counter);

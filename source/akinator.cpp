@@ -6,7 +6,7 @@
 #include "../include/akinator.h"
 #include "../include/tree.h"
 
-static int ProcessingYesNoAnswer(void)
+static bool ProcessingYesNoAnswer(void)
 {
     char ans[MAX_LEN] = {};
 
@@ -19,11 +19,11 @@ static int ProcessingYesNoAnswer(void)
         {
             case 'y':
             {
-                return EXIT_SUCCESS;
+                return true;
             }
             case 'n':
             {
-                return EXIT_FAILURE;
+                return false;
             }
             default:
             {
@@ -38,7 +38,7 @@ static int ProcessingYesNoAnswer(void)
 static void Quit(const char *const data_base, Tree *tree)
 {
     printf("Do you want to save your progress?[Y/n]: ");
-    if(!ProcessingYesNoAnswer())
+    if(ProcessingYesNoAnswer())
     {
         FILE *db_file = fopen(data_base, "wb");
         ASSERT(db_file, return);
@@ -66,7 +66,7 @@ static void Game(Tree *tree)
     while(cur_pos->left != NULL)
     {
         printf("%s?[Y/n]: ", cur_pos->data);
-        if(!ProcessingYesNoAnswer())
+        if(ProcessingYesNoAnswer())
         {
             cur_pos = cur_pos->right;
         }
@@ -77,7 +77,7 @@ static void Game(Tree *tree)
     }
 
     printf("Is \'%s\' the correct answer?[Y/n]: ", cur_pos->data);
-    if(!ProcessingYesNoAnswer())
+    if(ProcessingYesNoAnswer())
     {
         printf("GG.\n");
     }
