@@ -26,6 +26,7 @@ int StackDtor(Stack *stack)
     stack->capacity = 0;
 
     free(stack->data);
+    stack->data = NULL;
 
     return EXIT_SUCCESS;
 }
@@ -35,12 +36,16 @@ static int OptimalExpansion(Stack *stack)
 {
     if(stack->size == stack->capacity)
     {
-        data_t *temp_ptr = (data_t *)realloc(stack->data, sizeof(data_t) * (stack->capacity *= 2));
+        ASSERT(stack->capacity < ULLONG_MAX, return EXIT_FAILURE);
+
+        data_t *temp_ptr = (data_t *)realloc(stack->data, sizeof(data_t) * stack->capacity * 2);
         ASSERT(temp_ptr, return EXIT_FAILURE);
+
+        stack->capacity *= 2;
 
         stack->data = temp_ptr;
 
-        memset(stack->data + stack->size, 0, sizeof(data_t) * stack->size);
+        EXEC_ASSERT(memset(stack->data + stack->size, 0, sizeof(data_t) * stack->size), return EXIT_FAILURE);
     }
 
     return EXIT_SUCCESS;
@@ -62,8 +67,10 @@ static int OptimalShrink(Stack *stack)
 {
     if(stack->size * 4 == stack->capacity)
     {
-        data_t *temp_ptr = (data_t *)realloc(stack->data, sizeof(data_t) * (stack->capacity /= 2));
+        data_t *temp_ptr = (data_t *)realloc(stack->data, sizeof(data_t) * stack->capacity / 2);
         ASSERT(temp_ptr, return EXIT_FAILURE);
+
+        stack->capacity /= 2;
 
         stack->data = temp_ptr;
     }
@@ -91,7 +98,7 @@ int ClearStack(Stack *stack)
 {
     STACK_VER(stack, EXIT_FAILURE);
 
-    memset(stack->data, 0, sizeof(data_t) * stack->size);
+    EXEC_ASSERT(memset(stack->data, 0, sizeof(data_t) * stack->size), return EXIT_FAILURE);
     stack->size = 0;
 
     EXEC_ASSERT(!OptimalShrink(stack), return EXIT_FAILURE);

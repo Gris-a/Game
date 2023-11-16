@@ -6,12 +6,13 @@
 #include "../include/akinator.h"
 #include "../include/tree.h"
 
-static bool ProcessingYesNoAnswer(void)
+static bool ProcessingYesNoAnswer(const char *message)
 {
     char ans[MAX_LEN] = {};
 
     while(true)
     {
+        printf("%s", message);
         scanf("%s", ans);
         if(ans[1] != '\0') {printf("Try again.\n"); continue;}
 
@@ -35,10 +36,10 @@ static bool ProcessingYesNoAnswer(void)
     }
 }
 
+
 static void Quit(const char *const data_base, Tree *tree)
 {
-    printf("Do you want to save your progress?[Y/n]: ");
-    if(ProcessingYesNoAnswer())
+    if(ProcessingYesNoAnswer("Do you want to save your progress?[Y/n]: "))
     {
         FILE *db_file = fopen(data_base, "wb");
         ASSERT(db_file, return);
@@ -46,8 +47,6 @@ static void Quit(const char *const data_base, Tree *tree)
         TreeDump(tree, db_file);
         fclose(db_file);
     }
-
-    return;
 }
 
 
@@ -60,13 +59,15 @@ static void ShowTree(Tree *tree)
 }
 
 
-static void Game(Tree *tree)
+static Node *GetAnswer(Tree *const tree)
 {
+    char message[MAX_LEN * 2] = {};
+
     Node *cur_pos = tree->root;
-    while(cur_pos->left != NULL)
+    while(cur_pos->right != NULL)
     {
-        printf("%s?[Y/n]: ", cur_pos->data);
-        if(ProcessingYesNoAnswer())
+        sprintf(message, "%s?[Y/n]: ", cur_pos->data);
+        if(ProcessingYesNoAnswer(message))
         {
             cur_pos = cur_pos->right;
         }
@@ -76,27 +77,40 @@ static void Game(Tree *tree)
         }
     }
 
-    printf("Is \'%s\' the correct answer?[Y/n]: ", cur_pos->data);
-    if(ProcessingYesNoAnswer())
+    return cur_pos;
+}
+
+static void AddAnswer(Tree *tree, Node *prev_answer)
+{
+    char ans[MAX_LEN] = {};
+
+    printf("What is correct answer then?\n");
+    scanf(" %[^\n]", ans);
+
+    EXEC_ASSERT(AddNode(tree, prev_answer, prev_answer->data, LEFT ), return);
+    EXEC_ASSERT(AddNode(tree, prev_answer, ans              , RIGHT), return);
+
+    printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, prev_answer->data);
+    scanf(" %[^\n]", ans);
+
+    strncpy(prev_answer->data, ans, MAX_LEN - 1);
+}
+
+static void Game(Tree *tree)
+{
+    char message[MAX_LEN * 2] = {};
+
+    Node *answer = GetAnswer(tree);
+
+    sprintf(message, "Is \'%s\' the correct answer?[Y/n]: ", answer->data);
+    if(ProcessingYesNoAnswer(message))
     {
         printf("GG.\n");
     }
     else
     {
-        char ans[MAX_LEN] = {};
-        printf("What is correct answer then?\n");
-        scanf(" %[^\n]", ans);
-
-        EXEC_ASSERT(AddNode(tree, cur_pos, cur_pos->data, LEFT), return);
-        EXEC_ASSERT(AddNode(tree, cur_pos, ans, RIGHT)         , return);
-
-        printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, cur_pos->data);
-        scanf(" %[^\n]", ans);
-
-        strcpy(cur_pos->data, ans);
+        AddAnswer(tree, answer);
     }
-
-    return;
 }
 
 
@@ -110,17 +124,51 @@ static void PropertiesDump(Node *tree_pos, Stack *path)
 
         if(path_dir)
         {
-            printf("\t\033[1;32m%s\033[0m\n", tree_pos->data);
+            printf(color_green("\t%s\n"), tree_pos->data);
 
             tree_pos = tree_pos->right;
         }
         else
         {
-            printf("\t\033[1;31m%s\033[0m\n", tree_pos->data);
+            printf(color_red("\t%s\n"), tree_pos->data);
 
             tree_pos = tree_pos->left;
         }
     }
+}
+
+static Node *SimilarPropertiesDump(Node *tree_pos, Stack *path1, Stack *path2)
+{
+    data_t path1_dir = 0;
+    data_t path2_dir = 0;
+
+    while(path1->size && path2->size)
+    {
+        PopStack(path1, &path1_dir);
+        PopStack(path2, &path2_dir);
+
+        if(path1_dir && path2_dir)
+        {
+            printf(color_green("%s, "), tree_pos->data);
+
+            tree_pos = tree_pos->right;
+        }
+        else if(!(path1_dir || path2_dir))
+        {
+            printf(color_red("%s, "), tree_pos->data);
+
+            tree_pos = tree_pos->left;
+        }
+        else
+        {
+            PushStack(path1, path1_dir);
+            PushStack(path2, path2_dir);
+
+            break;
+        }
+    }
+
+    return tree_pos;
 }
 
 static void Definition(Tree *tree)
@@ -142,40 +190,6 @@ static void Definition(Tree *tree)
     printf(" - this is \'%s\'.\n", str);
 
     StackDtor(&path);
-}
-
-static Node *SimilarPropertiesDump(Node *tree_pos, Stack *path1, Stack *path2)
-{
-    data_t path1_dir = 0;
-    data_t path2_dir = 0;
-
-    while(path1->size && path2->size)
-    {
-        PopStack(path1, &path1_dir);
-        PopStack(path2, &path2_dir);
-
-        if(path1_dir && path2_dir)
-        {
-            printf("\033[1;32m%s,\033[0m ", tree_pos->data);
-
-            tree_pos = tree_pos->right;
-        }
-        else if(!(path1_dir || path2_dir))
-        {
-            printf("\033[1;31m%s,\033[0m ", tree_pos->data);
-
-            tree_pos = tree_pos->left;
-        }
-        else
-        {
-            PushStack(path1, path1_dir);
-            PushStack(path2, path2_dir);
-
-            break;
-        }
-    }
-
-    return tree_pos;
 }
 
 static void Compare(Tree *tree)
@@ -208,8 +222,11 @@ static void Compare(Tree *tree)
         return;
     }
 
-    Node  *tree_pos = SimilarPropertiesDump(tree->root, &path1, &path2);
-    if(tree_pos != tree->root) printf(" - similarities of \'%s\' и \'%s\'.\n", str1, str2);
+    Node *tree_pos = SimilarPropertiesDump(tree->root, &path1, &path2);
+    if(tree_pos != tree->root)
+    {
+        printf(" - similarities of \'%s\' и \'%s\'.\n", str1, str2);
+    }
 
     printf("\n'%s':\n", str1);
     PropertiesDump(tree_pos, &path1);

@@ -1,6 +1,12 @@
+#include <stdlib.h>
+
 #include "include/akinator.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    Akinator("data/data.txt");
+    if(argc != 2) return EXIT_FAILURE;
+
+    Akinator(argv[1]);
+
+    return EXIT_SUCCESS;
 }

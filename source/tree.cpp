@@ -6,7 +6,7 @@
 
 #include "../include/tree.h"
 
-Tree TreeCtor(char *const init_val)
+Tree TreeCtor(char *init_val)
 {
     ASSERT(init_val, return {});
 
@@ -19,12 +19,12 @@ Tree TreeCtor(char *const init_val)
 }
 
 
-static void TreeDtorSup(Tree *tree, Node *sub_tree)
+static void SubTreeDtor(Tree *tree, Node *sub_tree)
 {
     if(!sub_tree) return;
 
-    TreeDtorSup(tree, sub_tree->left );
-    TreeDtorSup(tree, sub_tree->right);
+    SubTreeDtor(tree, sub_tree->left );
+    SubTreeDtor(tree, sub_tree->right);
 
     free(sub_tree);
 
@@ -38,8 +38,8 @@ int TreeDtor(Tree *tree, Node *root)
     ASSERT(root, return EXIT_FAILURE);
     ASSERT(root == tree->root || TreeSearchParent(tree, root), return EXIT_FAILURE);
 
-    TreeDtorSup(tree, root->left );
-    TreeDtorSup(tree, root->right);
+    SubTreeDtor(tree, root->left );
+    SubTreeDtor(tree, root->right);
 
     if(tree->root != root)
     {
@@ -63,7 +63,7 @@ int TreeDtor(Tree *tree, Node *root)
 }
 
 
-Node *AddNode(Tree *tree, Node *tree_node, char *const val, PlacePref pref)
+Node *AddNode(Tree *tree, Node *tree_node, char *val, PlacePref pref)
 {
     ASSERT(val, return NULL);
 
@@ -107,30 +107,32 @@ Node *AddNode(Tree *tree, Node *tree_node, char *const val, PlacePref pref)
 }
 
 
-static Node *TreeSearchValSup(Node *const tree_node, char *const val)
+static Node *SubTreeSearchVal(Node *const tree_node, char *val)
 {
-    if(!tree_node || strcmp(tree_node->data, val) == 0) return tree_node;
+    if(!tree_node) return NULL;
 
-    Node *left  = TreeSearchValSup(tree_node->left , val);
-    Node *right = TreeSearchValSup(tree_node->right, val);
+    if(strncmp(tree_node->data, val, MAX_LEN) == 0) return tree_node;
 
-    return (left ? left : right);
+    Node *find  = SubTreeSearchVal(tree_node->left , val);
+
+    return (find ? find : SubTreeSearchVal(tree_node->right, val));
 }
 
-Node *TreeSearchVal(Tree *const tree, char *const val)
+Node *TreeSearchVal(Tree *const tree, char *val)
 {
     ASSERT(val, return NULL);
 
     TREE_VER(tree, NULL);
 
-    return TreeSearchValSup(tree->root, val);
+    return SubTreeSearchVal(tree->root, val);
 }
 
 
 static bool SubTreeValPath(Node *const tree_node, char *const val, Stack *path)
 {
     if(!tree_node) return false;
-    if(strcmp(tree_node->data, val) == 0) return true;
+
+    if(strncmp(tree_node->data, val, MAX_LEN) == 0) return true;
 
     if(SubTreeValPath(tree_node->left, val, path))
     {
@@ -168,15 +170,16 @@ Stack TreeValPath(Tree *const tree, char *const val)
 }
 
 
-static Node *TreeSearchParentSup(Node *const tree_node, Node *const search_node)
+static Node *SubTreeSearchParent(Node *const tree_node, Node *const search_node)
 {
-    if(!tree_node || tree_node->left  == search_node ||
-                     tree_node->right == search_node) return tree_node;
+    if(!tree_node) return NULL;
 
-    Node *left  = TreeSearchParentSup(tree_node->left , search_node);
-    Node *right = TreeSearchParentSup(tree_node->right, search_node);
+    if(tree_node->left  == search_node ||
+       tree_node->right == search_node) return tree_node;
 
-    return (left ? left : right);
+    Node *find  = SubTreeSearchParent(tree_node->left , search_node);
+
+    return (find ? find : SubTreeSearchParent(tree_node->right, search_node));
 }
 
 Node *TreeSearchParent(Tree *const tree, Node *const search_node)
@@ -185,7 +188,7 @@ Node *TreeSearchParent(Tree *const tree, Node *const search_node)
 
     TREE_VER(tree, NULL);
 
-    return TreeSearchParentSup(tree->root, search_node);
+    return SubTreeSearchParent(tree->root, search_node);
 }
 
 
@@ -246,20 +249,20 @@ void TreeDot(Tree *const tree, const char *path)
 
     fclose(file);
 
-    char sys_cmd[1000] = {};
+    char sys_cmd[MAX_LEN] = {};
     sprintf(sys_cmd, "dot %s -T png -o data/tree.png", path);
     system(sys_cmd);
 }
 
 
-static void TreeDumpSup(Node *const tree_node, FILE *dump_file)
+static void SubTreeDump(Node *const tree_node, FILE *dump_file)
 {
     if(!tree_node) {fprintf(dump_file, "*"); return;}
 
     fprintf(dump_file, "\n(");
     fprintf(dump_file, "<%s>", tree_node->data);
-    TreeDumpSup(tree_node->left , dump_file);
-    TreeDumpSup(tree_node->right, dump_file);
+    SubTreeDump(tree_node->left , dump_file);
+    SubTreeDump(tree_node->right, dump_file);
     fprintf(dump_file, ")");
 }
 
@@ -268,12 +271,12 @@ void TreeDump(Tree *const tree, FILE *dump_file)
     ASSERT(tree, return);
 
     fprintf(dump_file, "\n\n");
-    TreeDumpSup(tree->root, dump_file);
+    SubTreeDump(tree->root, dump_file);
     fprintf(dump_file, "\n\n");
 }
 
 
-static Node *ReadNode(FILE *file, size_t *counter)
+static Node *ReadSubTree(FILE *file, size_t *counter)
 {
     char ch = 0;
     fscanf(file, " %c", &ch);
@@ -287,17 +290,15 @@ static Node *ReadNode(FILE *file, size_t *counter)
             char data[MAX_LEN] = {};
 
             fscanf(file, " %c", &ch);
-            ASSERT(ch == '<', (*counter) = ULLONG_MAX;
-                              return NULL);
+            ASSERT(ch == '<', return NULL);
 
             fscanf(file, " %[^>]%*c", data);
 
-            Node *left  = ReadNode(file, counter);
-            Node *right = ReadNode(file, counter);
+            Node *left  = ReadSubTree(file, counter);
+            Node *right = ReadSubTree(file, counter);
 
             fscanf(file, " %c", &ch);
-            ASSERT(ch == ')', (*counter) = ULLONG_MAX;
-                              free(left);
+            ASSERT(ch == ')', free(left );
                               free(right);
                               return NULL);
 
@@ -309,7 +310,7 @@ static Node *ReadNode(FILE *file, size_t *counter)
         }
         default:
         {
-            (*counter) = ULLONG_MAX;
+            LOG("Invalid data.\n");
 
             return NULL;
         }
@@ -324,7 +325,7 @@ Tree ReadTree(const char *const path)
     size_t counter = 0;
     Tree tree      = {};
 
-    tree.root = ReadNode(file, &counter);
+    tree.root = ReadSubTree(file, &counter);
     tree.size = counter;
 
     fclose(file);
@@ -343,8 +344,7 @@ static void TreeSizeVer(Tree *const tree, Node *const tree_node, size_t *counter
 
 int TreeVer(Tree *const tree)
 {
-    ASSERT(tree && tree->root      , return EXIT_FAILURE);
-    ASSERT(tree->size != ULLONG_MAX, return EXIT_FAILURE);
+    ASSERT(tree && tree->root, return EXIT_FAILURE);
 
     size_t counter = 0;
     TreeSizeVer(tree, tree->root, &counter);
