@@ -6,14 +6,12 @@
 #include "../include/akinator.h"
 #include "../include/tree.h"
 
-static void Quit(const char *const data_base, Tree *tree)
+static int ProcessingYesNoAnswer(void)
 {
     char ans[MAX_LEN] = {};
 
     while(true)
     {
-        printf("Do you want to save your progress?[Y/n]: ");
-
         scanf("%s", ans);
         if(ans[1] != '\0') {printf("Try again.\n"); continue;}
 
@@ -21,17 +19,11 @@ static void Quit(const char *const data_base, Tree *tree)
         {
             case 'y':
             {
-                FILE *db_file = fopen(data_base, "wb");
-                ASSERT(db_file, return);
-
-                TreeDump(tree, db_file);
-                fclose(db_file);
-
-                return;
+                return EXIT_SUCCESS;
             }
             case 'n':
             {
-                return;
+                return EXIT_FAILURE;
             }
             default:
             {
@@ -43,99 +35,68 @@ static void Quit(const char *const data_base, Tree *tree)
     }
 }
 
+static void Quit(const char *const data_base, Tree *tree)
+{
+    printf("Do you want to save your progress?[Y/n]: ");
+    if(!ProcessingYesNoAnswer())
+    {
+        FILE *db_file = fopen(data_base, "wb");
+        ASSERT(db_file, return);
+
+        TreeDump(tree, db_file);
+        fclose(db_file);
+    }
+
+    return;
+}
+
 
 static void ShowTree(Tree *tree)
 {
-    TreeDot(tree, "tree.dot");
+    TreeDot(tree, "data/tree.dot");
 
-    system("xdg-open tree.png");
+    system("xdg-open data/tree.png");
     system("clear");
 }
 
 
 static void Game(Tree *tree)
 {
-    char ans[MAX_LEN] = {};
     Node *cur_pos = tree->root;
-
     while(cur_pos->left != NULL)
     {
-        while(true)
+        printf("%s?[Y/n]: ", cur_pos->data);
+        if(!ProcessingYesNoAnswer())
         {
-            printf("%s?[Y/n]: ", cur_pos->data);
-
-            scanf("%s", ans);
-            if(ans[1] != '\0') {printf("Try again.\n"); continue;}
-
-            switch(tolower(ans[0]))
-            {
-                case 'y':
-                {
-                    cur_pos = cur_pos->right;
-
-                    break;
-                }
-                case 'n':
-                {
-                    cur_pos = cur_pos->left;
-
-                    break;
-                }
-                default:
-                {
-                    printf("Try again.\n");
-
-                    continue;
-                }
-            }
-
-            break;
+            cur_pos = cur_pos->right;
+        }
+        else
+        {
+            cur_pos = cur_pos->left;
         }
     }
 
-    while(true)
+    printf("Is \'%s\' the correct answer?[Y/n]: ", cur_pos->data);
+    if(!ProcessingYesNoAnswer())
     {
-        printf("Is \'%s\' the correct answer?[Y/n]: ", cur_pos->data);
-
-        scanf("%s", ans);
-        if(ans[1] != '\0') {printf("Try again.\n"); continue;}
-
-        switch(tolower(ans[0]))
-        {
-            case 'y':
-            {
-                printf("GG.\n");
-
-                break;
-            }
-            case 'n':
-            {
-                printf("What is correct answer then?\n");
-                scanf(" %[^\n]", ans);
-
-                AddNode(tree, cur_pos, cur_pos->data, LEFT);
-                ASSERT(cur_pos->left, return);
-
-                AddNode(tree, cur_pos, ans, RIGHT);
-                ASSERT(cur_pos->right, return);
-
-                printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, cur_pos->data);
-                scanf(" %[^\n]", ans);
-
-                strcpy(cur_pos->data, ans);
-
-                break;
-            }
-            default:
-            {
-                printf("Try again.\n");
-
-                continue;
-            }
-        }
-
-        return;
+        printf("GG.\n");
     }
+    else
+    {
+        char ans[MAX_LEN] = {};
+        printf("What is correct answer then?\n");
+        scanf(" %[^\n]", ans);
+
+        EXEC_ASSERT(AddNode(tree, cur_pos, cur_pos->data, LEFT), return);
+        EXEC_ASSERT(AddNode(tree, cur_pos, ans, RIGHT)         , return);
+
+        printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, cur_pos->data);
+        scanf(" %[^\n]", ans);
+
+        strcpy(cur_pos->data, ans);
+    }
+
+    return;
 }
 
 
@@ -310,6 +271,7 @@ void Akinator(const char *const data_base)
                 continue;
             }
         }
+
         break;
     }
 

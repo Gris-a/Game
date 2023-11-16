@@ -2,5 +2,5 @@
 
 int main(void)
 {
-    Akinator("data.txt");
+    Akinator("data/data.txt");
 }
