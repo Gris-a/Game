@@ -127,17 +127,25 @@ Node *TreeSearchVal(Tree *const tree, char *const val)
 }
 
 
-static Node *TreeValPathSup(Node *const tree_node, char *const val, Stack *path)
+static bool SubTreeValPath(Node *const tree_node, char *const val, Stack *path)
 {
-    if(!tree_node || strcmp(tree_node->data, val) == 0) return tree_node;
+    if(!tree_node) return false;
+    if(strcmp(tree_node->data, val) == 0) return true;
 
-    Node *node_next  = TreeValPathSup(tree_node->left, val, path);
-    if(node_next) {PushStack(path, 0); return node_next;}
+    if(SubTreeValPath(tree_node->left, val, path))
+    {
+        PushStack(path, false);
 
-    node_next = TreeValPathSup(tree_node->right, val, path);
-    if(node_next) {PushStack(path, 1); return node_next;}
+        return true;
+    }
+    else if(SubTreeValPath(tree_node->right, val, path))
+    {
+        PushStack(path, true);
 
-    return NULL;
+        return true;
+    }
+
+    return false;
 }
 
 Stack TreeValPath(Tree *const tree, char *const val)
@@ -149,7 +157,7 @@ Stack TreeValPath(Tree *const tree, char *const val)
     Stack path = StackCtor();
     ASSERT(path.data, return {});
 
-    if(!TreeValPathSup(tree->root, val, &path))
+    if(!SubTreeValPath(tree->root, val, &path))
     {
         StackDtor(&path);
 
