@@ -144,6 +144,40 @@ static void Definition(Tree *tree)
     StackDtor(&path);
 }
 
+static Node *SimilarPropertiesDump(Node *tree_pos, Stack *path1, Stack *path2)
+{
+    data_t path1_dir = 0;
+    data_t path2_dir = 0;
+
+    while(path1->size && path2->size)
+    {
+        PopStack(path1, &path1_dir);
+        PopStack(path2, &path2_dir);
+
+        if(path1_dir && path2_dir)
+        {
+            printf("\033[1;32m%s,\033[0m ", tree_pos->data);
+
+            tree_pos = tree_pos->right;
+        }
+        else if(!(path1_dir || path2_dir))
+        {
+            printf("\033[1;31m%s,\033[0m ", tree_pos->data);
+
+            tree_pos = tree_pos->left;
+        }
+        else
+        {
+            PushStack(path1, path1_dir);
+            PushStack(path2, path2_dir);
+
+            break;
+        }
+    }
+
+    return tree_pos;
+}
+
 static void Compare(Tree *tree)
 {
     printf(" First to compare: ");
@@ -174,41 +208,13 @@ static void Compare(Tree *tree)
         return;
     }
 
-    Node  *tree_pos  = tree->root;
-    data_t path1_dir = 0;
-    data_t path2_dir = 0;
+    Node  *tree_pos = SimilarPropertiesDump(tree->root, &path1, &path2);
+    if(tree_pos != tree->root) printf(" - similarities of \'%s\' и \'%s\'.\n", str1, str2);
 
-    while(path1.size && path2.size)
-    {
-        PopStack(&path1, &path1_dir);
-        PopStack(&path2, &path2_dir);
-
-        if(path1_dir && path2_dir)
-        {
-            printf("\033[1;32m%s,\033[0m ", tree_pos->data);
-
-            tree_pos = tree_pos->right;
-        }
-        else if(!(path1_dir || path2_dir))
-        {
-            printf("\033[1;31m%s,\033[0m ", tree_pos->data);
-
-            tree_pos = tree_pos->left;
-        }
-        else
-        {
-            PushStack(&path1, path1_dir);
-            PushStack(&path2, path2_dir);
-
-            break;
-        }
-    }
-    printf(" - similarities of \'%s\' и \'%s\'.\n", str1, str2);
-
-    printf("\n Besides that '%s':\n", str1);
+    printf("\n'%s':\n", str1);
     PropertiesDump(tree_pos, &path1);
 
-    printf("\n Besides that '%s':\n", str2);
+    printf("\n'%s':\n", str2);
     PropertiesDump(tree_pos, &path2);
 
     StackDtor(&path1);

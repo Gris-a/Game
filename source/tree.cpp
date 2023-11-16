@@ -277,7 +277,11 @@ static Node *ReadNode(FILE *file, size_t *counter)
             (*counter)++;
 
             char data[MAX_LEN] = {};
-            fscanf(file, " %*c%[^>]%*c", data);
+
+            fscanf(file, " %c", &ch);
+            ASSERT(ch == '<', (*counter) = ULLONG_MAX; return NULL);
+
+            fscanf(file, " %[^>]%*c", data);
 
             Node *left  = ReadNode(file, counter);
             Node *right = ReadNode(file, counter);
