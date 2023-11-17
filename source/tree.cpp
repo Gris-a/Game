@@ -344,7 +344,8 @@ static void TreeSizeVer(Tree *const tree, Node *const tree_node, size_t *counter
 
 int TreeVer(Tree *const tree)
 {
-    ASSERT(tree && tree->root, return EXIT_FAILURE);
+    ASSERT(tree && tree->root    , return EXIT_FAILURE);
+    ASSERT(tree->size <= UINT_MAX, return EXIT_FAILURE);
 
     size_t counter = 0;
     TreeSizeVer(tree, tree->root, &counter);
