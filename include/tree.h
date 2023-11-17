@@ -4,7 +4,7 @@
 #include "log.h"
 #include "stack.h"
 
-const int MAX_LEN = 100;
+const int MAX_LEN = 1000;
 
 struct Node
 {
@@ -29,8 +29,7 @@ enum PlacePref
 };
 
 #define TREE_DUMP(tree_ptr) LOG("%s:%s:%d:\n", __FILE__, __PRETTY_FUNCTION__, __LINE__);\
-                            TreeDump(tree_ptr, LOG_FILE);\
-                            TreeDot(tree_ptr, "tree.dot")
+                            TreeDump(tree_ptr, __func__, __LINE__);\
 
 #ifdef PROTECT
 #define TREE_VER(tree_ptr, ret_val_on_fail) if(TreeVer(tree_ptr))\
@@ -58,9 +57,11 @@ Node *TreeSearchParent(Tree *const tree, Node *const search_node);
 
 Node *NodeCtor(char *const val, Node *const left = NULL, Node *const right = NULL);
 
+void TreeTextDump(Tree *const tree, FILE *dump_file = LOG_FILE);
+
 void TreeDot(Tree *const tree, const char *path);
 
-void TreeDump(Tree *const tree, FILE *dump_file);
+void TreeDump(Tree *tree, const char *func, const int line);
 
 Tree ReadTree(const char *const path);
 

@@ -44,7 +44,7 @@ static void Quit(const char *const data_base, Tree *tree)
         FILE *db_file = fopen(data_base, "wb");
         ASSERT(db_file, return);
 
-        TreeDump(tree, db_file);
+        TreeTextDump(tree, db_file);
         fclose(db_file);
     }
 }
@@ -52,7 +52,7 @@ static void Quit(const char *const data_base, Tree *tree)
 
 static void ShowTree(Tree *tree)
 {
-    TreeDot(tree, "data/tree.dot");
+    TreeDot(tree, "data/tree.png");
 
     system("xdg-open data/tree.png");
     system("clear");
@@ -245,6 +245,8 @@ void Akinator(const char *const data_base)
 
     Tree tree = ReadTree(data_base);
     ASSERT(tree.root, return);
+
+    TREE_DUMP(&tree);
 
     char ans[MAX_LEN] = {};
 
