@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "../include/akinator.h"
 #include "../include/tree.h"
@@ -37,11 +38,15 @@ static bool ProcessingYesNoAnswer(const char *message)
 }
 
 
-static void Quit(const char *const data_base, Tree *tree)
+static void Quit(Tree *tree)
 {
     if(ProcessingYesNoAnswer("Do you want to save your progress?[Y/n]: "))
     {
-        FILE *db_file = fopen(data_base, "wb");
+        char name[MAX_LEN] = {};
+        time_t cur_time = time(NULL);
+        sprintf(name, "data/saved/data_%s.png", ctime(&cur_time));
+
+        FILE *db_file = fopen(name, "wb");
         ASSERT(db_file, return);
 
         TreeTextDump(tree, db_file);
@@ -246,7 +251,9 @@ void Akinator(const char *const data_base)
     Tree tree = ReadTree(data_base);
     ASSERT(tree.root, return);
 
-    TREE_DUMP(&tree);
+    system("mkdir data");
+    system("mkdir data/saved");
+    system("clear");
 
     char ans[MAX_LEN] = {};
 
@@ -285,7 +292,7 @@ void Akinator(const char *const data_base)
             }
             case 'q':
             {
-                Quit(data_base, &tree);
+                Quit(&tree);
 
                 break;
             }
