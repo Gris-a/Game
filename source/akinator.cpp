@@ -44,7 +44,10 @@ static void Quit(Tree *tree)
     {
         char name[MAX_LEN] = {};
         time_t cur_time = time(NULL);
-        sprintf(name, "data/saved/data_%s.png", ctime(&cur_time));
+
+        sprintf(name, "data/saved/data_%s", ctime(&cur_time));
+        name[strlen(name) - 1] = '\0';
+        strcat(name, ".txt");
 
         FILE *db_file = fopen(name, "wb");
         ASSERT(db_file, return);
