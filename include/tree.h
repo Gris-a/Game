@@ -1,14 +1,15 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include <stdbool.h>
+
 #include "log.h"
 #include "stack.h"
-
-const int MAX_LEN = 1000;
+#include "general.h"
 
 struct Node
 {
-    char data[MAX_LEN];
+    char data[MAX_DATA_LEN];
 
     Node *left;
     Node *right;
@@ -32,14 +33,14 @@ enum PlacePref
                             TreeDump(tree_ptr, __func__, __LINE__);\
 
 #ifdef PROTECT
-#define TREE_VER(tree_ptr, ret_val_on_fail) if(TreeVer(tree_ptr))\
-                                            {\
-                                                LOG("%s:%s:%d: Error: invalid tree.\n", __FILE__, __PRETTY_FUNCTION__, __LINE__);\
-                                                TREE_DUMP(tree_ptr);\
-                                                return ret_val_on_fail;\
-                                            }
+#define TREE_VERIFICATION(tree_ptr, ret_val_on_fail) if(!IsTreeValid(tree_ptr))\
+                                                     {\
+                                                         LOG("%s:%s:%d: Error: invalid tree.\n", __FILE__, __PRETTY_FUNCTION__, __LINE__);\
+                                                         TREE_DUMP(tree_ptr);\
+                                                         return ret_val_on_fail;\
+                                                     }
 #else
-#define TREE_VER(tree_ptr, ...)
+#define TREE_VERIFICATION(tree_ptr, ...)
 #endif
 
 
@@ -59,14 +60,14 @@ Node *NodeCtor(char *const val, Node *const left = NULL, Node *const right = NUL
 
 void TreeTextDump(Tree *const tree, FILE *dump_file = LOG_FILE);
 
-void TreeDot(Tree *const tree, const char *path);
+void TreeDot(Tree *const tree, const char *png_file_name);
 
 void TreeDump(Tree *tree, const char *func, const int line);
 
-Tree ReadTree(const char *const path);
+Tree ReadTree(const char *const file_name);
 
 #ifdef PROTECT
-int TreeVer(Tree *const tree);
+bool IsTreeValid(Tree *const tree);
 #endif
 
 #endif //TREE_H

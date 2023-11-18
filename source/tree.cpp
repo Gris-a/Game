@@ -33,7 +33,7 @@ static void SubTreeDtor(Tree *tree, Node *sub_tree)
 
 int TreeDtor(Tree *tree, Node *root)
 {
-    TREE_VER(tree, EXIT_FAILURE);
+    TREE_VERIFICATION(tree, EXIT_FAILURE);
 
     ASSERT(root, return EXIT_FAILURE);
     ASSERT(root == tree->root || TreeSearchParent(tree, root), return EXIT_FAILURE);
@@ -41,7 +41,11 @@ int TreeDtor(Tree *tree, Node *root)
     SubTreeDtor(tree, root->left );
     SubTreeDtor(tree, root->right);
 
-    if(tree->root != root)
+    if(root == tree->root)
+    {
+        tree->root = NULL;
+    }
+    else
     {
         root->left  = NULL;
         root->right = NULL;
@@ -50,10 +54,6 @@ int TreeDtor(Tree *tree, Node *root)
 
         if(parent->left == root) parent->left  = NULL;
         else                     parent->right = NULL;
-    }
-    else
-    {
-        tree->root = NULL;
     }
 
     free(root);
@@ -67,7 +67,7 @@ Node *AddNode(Tree *tree, Node *tree_node, char *val, PlacePref pref)
 {
     ASSERT(val, return NULL);
 
-    TREE_VER(tree, NULL);
+    TREE_VERIFICATION(tree, NULL);
 
     ASSERT(tree_node, return NULL);
     ASSERT(tree_node == tree->root || TreeSearchParent(tree, tree_node), return NULL);
@@ -110,8 +110,7 @@ Node *AddNode(Tree *tree, Node *tree_node, char *val, PlacePref pref)
 static Node *SubTreeSearchVal(Node *const tree_node, char *val)
 {
     if(!tree_node) return NULL;
-
-    if(strncmp(tree_node->data, val, MAX_LEN) == 0) return tree_node;
+    else if(strncmp(tree_node->data, val, MAX_DATA_LEN) == 0) return tree_node;
 
     Node *find  = SubTreeSearchVal(tree_node->left , val);
 
@@ -120,9 +119,9 @@ static Node *SubTreeSearchVal(Node *const tree_node, char *val)
 
 Node *TreeSearchVal(Tree *const tree, char *val)
 {
-    ASSERT(val, return NULL);
+    TREE_VERIFICATION(tree, NULL);
 
-    TREE_VER(tree, NULL);
+    ASSERT(val, return NULL);
 
     return SubTreeSearchVal(tree->root, val);
 }
@@ -131,18 +130,17 @@ Node *TreeSearchVal(Tree *const tree, char *val)
 static bool SubTreeValPath(Node *const tree_node, char *const val, Stack *path)
 {
     if(!tree_node) return false;
-
-    if(strncmp(tree_node->data, val, MAX_LEN) == 0) return true;
+    else if(strncmp(tree_node->data, val, MAX_DATA_LEN) == 0) return true;
 
     if(SubTreeValPath(tree_node->left, val, path))
     {
-        PushStack(path, false);
+        PushStack(path, 0);
 
         return true;
     }
     else if(SubTreeValPath(tree_node->right, val, path))
     {
-        PushStack(path, true);
+        PushStack(path, 1);
 
         return true;
     }
@@ -152,9 +150,9 @@ static bool SubTreeValPath(Node *const tree_node, char *const val, Stack *path)
 
 Stack TreeValPath(Tree *const tree, char *const val)
 {
-    ASSERT(val, return {});
+    TREE_VERIFICATION(tree, {});
 
-    TREE_VER(tree, {});
+    ASSERT(val, return {});
 
     Stack path = StackCtor();
     ASSERT(path.data, return {});
@@ -173,9 +171,8 @@ Stack TreeValPath(Tree *const tree, char *const val)
 static Node *SubTreeSearchParent(Node *const tree_node, Node *const search_node)
 {
     if(!tree_node) return NULL;
-
-    if(tree_node->left  == search_node ||
-       tree_node->right == search_node) return tree_node;
+    else if(tree_node->left  == search_node ||
+            tree_node->right == search_node) return tree_node;
 
     Node *find  = SubTreeSearchParent(tree_node->left , search_node);
 
@@ -184,9 +181,9 @@ static Node *SubTreeSearchParent(Node *const tree_node, Node *const search_node)
 
 Node *TreeSearchParent(Tree *const tree, Node *const search_node)
 {
-    ASSERT(search_node, return NULL);
+    TREE_VERIFICATION(tree, NULL);
 
-    TREE_VER(tree, NULL);
+    ASSERT(search_node, return NULL);
 
     return SubTreeSearchParent(tree->root, search_node);
 }
@@ -197,9 +194,10 @@ Node *NodeCtor(char *const val, Node *const left, Node *const right)
     ASSERT(val, return NULL);
 
     Node *node = (Node *)calloc(1, sizeof(Node));
+
     ASSERT(node, return NULL);
 
-    strncpy(node->data, val, MAX_LEN - 1);
+    strncpy(node->data, val, MAX_DATA_LEN - 1);
     node->left  = left;
     node->right = right;
 
@@ -246,7 +244,7 @@ void TreeTextDump(Tree *const tree, FILE *dump_file)
 }
 
 
-static void NodeEdgeGen(Node *const node, Node *const node_next, const char *direction, FILE *file)
+static void DotGraphCtor(Node *const node, Node *const node_next, const char *direction, FILE *file)
 {
     if(!node_next) return;
 
@@ -255,38 +253,38 @@ static void NodeEdgeGen(Node *const node, Node *const node_next, const char *dir
 
     fprintf(file, "node%p:<%s>:s -> node%p:<data>:n;\n", node, direction, node_next);
 
-    NodeEdgeGen(node_next, node_next->left , "left" , file);
-    NodeEdgeGen(node_next, node_next->right, "right", file);
+    DotGraphCtor(node_next, node_next->left , "left" , file);
+    DotGraphCtor(node_next, node_next->right, "right", file);
 }
 
-void TreeDot(Tree *const tree, const char *path)
+void TreeDot(Tree *const tree, const char *png_file_name)
 {
     ASSERT(tree && tree->root, return);
-    ASSERT(path, return);
+    ASSERT(png_file_name     , return);
 
-    FILE *file = fopen("tree.dot", "wb");
-    ASSERT(file, return);
+    FILE *dot_file = fopen("tree.dot", "wb");
+    ASSERT(dot_file, return);
 
-    fprintf(file, "digraph\n"
+    fprintf(dot_file, "digraph\n"
                   "{\n"
                   "bgcolor = \"grey\";\n"
                   "ranksep = \"equally\";\n"
                   "node[shape = \"Mrecord\"; style = \"filled\"; fillcolor = \"#58CD36\"];\n"
                   "{rank = source;");
-    fprintf(file, "nodel[label = \"<root> root: %p | <size> size: %zu\"; fillcolor = \"lightblue\"];", tree->root, tree->size);
+    fprintf(dot_file, "nodel[label = \"<root> root: %p | <size> size: %zu\"; fillcolor = \"lightblue\"];", tree->root, tree->size);
 
-    fprintf(file, "node%p[label = \"{<data> %s | {<left> Nein | <right> Ja}}\"; fillcolor = \"orchid\"]};\n",
-                                                                                tree->root, tree->root->data);
+    fprintf(dot_file, "node%p[label = \"{<data> %s | {<left> Nein | <right> Ja}}\"; fillcolor = \"orchid\"]};\n",
+                                                                                    tree->root, tree->root->data);
 
-    NodeEdgeGen(tree->root, tree->root->left , "left" , file);
-    NodeEdgeGen(tree->root, tree->root->right, "right", file);
+    DotGraphCtor(tree->root, tree->root->left , "left" , dot_file);
+    DotGraphCtor(tree->root, tree->root->right, "right", dot_file);
 
-    fprintf(file, "}\n");
+    fprintf(dot_file, "}\n");
 
-    fclose(file);
+    fclose(dot_file);
 
-    char sys_cmd[MAX_LEN] = {};
-    sprintf(sys_cmd, "dot tree.dot -T png -o %s", path);
+    char sys_cmd[MAX_MESSAGE_LEN] = {};
+    snprintf(sys_cmd, MAX_MESSAGE_LEN - 1, "dot tree.dot -T png -o %s", png_file_name);
     system(sys_cmd);
 
     remove("tree.dot");
@@ -301,12 +299,12 @@ void TreeDump(Tree *tree, const char *func, const int line)
 
     if(num == 0) MakeDumpDir();
 
-    char path[MAX_LEN] = {};
+    char file_name[MAX_FILE_NAME_LEN] = {};
 
     TreeTextDump(tree);
 
-    sprintf(path, "dump_tree/tree_dump%d__%s:%d__.png", num, func, line);
-    TreeDot(tree, path);
+    sprintf(file_name, "dump_tree/tree_dump%d__%s:%d__.png", num, func, line);
+    TreeDot(tree, file_name);
 
     num++;
 }
@@ -323,9 +321,10 @@ static Node *ReadSubTree(FILE *file, size_t *counter)
         {
             (*counter)++;
 
-            char data[MAX_LEN] = {};
+            char data[MAX_DATA_LEN] = {};
 
             fscanf(file, " %c", &ch);
+
             ASSERT(ch == '<', return NULL);
 
             fscanf(file, " %[^>]%*c", data);
@@ -334,7 +333,9 @@ static Node *ReadSubTree(FILE *file, size_t *counter)
             Node *right = ReadSubTree(file, counter);
 
             fscanf(file, " %c", &ch);
-            ASSERT(ch == ')', free(left );
+
+            ASSERT(ch == ')', LOG("Ivalid data.\n");
+                              free(left );
                               free(right);
                               return NULL);
 
@@ -353,9 +354,9 @@ static Node *ReadSubTree(FILE *file, size_t *counter)
     }
 }
 
-Tree ReadTree(const char *const path)
+Tree ReadTree(const char *const file_name)
 {
-    FILE *file = fopen(path, "rb");
+    FILE *file = fopen(file_name, "rb");
     ASSERT(file, return {});
 
     size_t counter = 0;
@@ -370,24 +371,25 @@ Tree ReadTree(const char *const path)
 }
 
 #ifdef PROTECT
-static void TreeSizeVer(Tree *const tree, Node *const tree_node, size_t *counter)
+static void TreeSizeValidation(Tree *const tree, Node *const tree_node, size_t *counter)
 {
-    if(!tree_node || ++(*counter) > tree->size) return;
+    if(!tree_node || (*counter) >= tree->size) return;
+    (*counter)++;
 
-    TreeSizeVer(tree, tree_node->left , counter);
-    TreeSizeVer(tree, tree_node->right, counter);
+    TreeSizeValidation(tree, tree_node->left , counter);
+    TreeSizeValidation(tree, tree_node->right, counter);
 }
 
-int TreeVer(Tree *const tree)
+bool IsTreeValid(Tree *const tree)
 {
-    ASSERT(tree && tree->root    , return EXIT_FAILURE);
-    ASSERT(tree->size <= UINT_MAX, return EXIT_FAILURE);
+    ASSERT(tree && tree->root    , return false);
+    ASSERT(tree->size <= UINT_MAX, return false);
 
     size_t counter = 0;
-    TreeSizeVer(tree, tree->root, &counter);
+    TreeSizeValidation(tree, tree->root, &counter);
 
-    ASSERT(counter == tree->size, return EXIT_FAILURE);
+    ASSERT(counter == tree->size, return false);
 
-    return EXIT_SUCCESS;
+    return true;
 }
 #endif

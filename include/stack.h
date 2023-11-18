@@ -5,8 +5,8 @@
 
 #include "log.h"
 
-typedef long long data_t;
-#define DATA_FORMAT "%lld"
+typedef char data_t;
+#define DATA_FORMAT "%d"
 
 const size_t BASE_CAPACITY = 2;
 struct Stack
@@ -28,7 +28,7 @@ struct Stack
                                                           return ret_val_on_fail;\
                                                       }
 #else
-#define STACK_VER(...)
+#define STACK_VERIFICATION(...)
 #endif
 
 Stack StackCtor(const size_t capacity = BASE_CAPACITY);
