@@ -26,8 +26,6 @@ extern FILE *LOG_FILE;
 #define ASSERT(condition, action)
 #endif
 
-#define EXEC_ASSERT(condition, action) {bool __temp__ = (condition); ASSERT(__temp__, action);}
-
 FILE *OpenLog(void);
 
 void CloseLog(void);

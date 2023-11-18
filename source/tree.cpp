@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <limits.h>
 
@@ -11,6 +10,7 @@ Tree TreeCtor(char *init_val)
     ASSERT(init_val, return {});
 
     Node *root = NodeCtor(init_val);
+
     ASSERT(root, return {});
 
     Tree tree = {root, 1};
@@ -36,10 +36,13 @@ int TreeDtor(Tree *tree, Node *root)
     TREE_VERIFICATION(tree, EXIT_FAILURE);
 
     ASSERT(root, return EXIT_FAILURE);
-    ASSERT(root == tree->root || TreeSearchParent(tree, root), return EXIT_FAILURE);
+    ASSERT(root == tree->root || (TreeSearchParent(tree, root) != NULL), return EXIT_FAILURE);
 
-    SubTreeDtor(tree, root->left );
+    SubTreeDtor(tree, root->left);
+    root->left  = NULL;
+
     SubTreeDtor(tree, root->right);
+    root->right = NULL;
 
     if(root == tree->root)
     {
@@ -47,9 +50,6 @@ int TreeDtor(Tree *tree, Node *root)
     }
     else
     {
-        root->left  = NULL;
-        root->right = NULL;
-
         Node *parent = TreeSearchParent(tree, root);
 
         if(parent->left == root) parent->left  = NULL;
@@ -65,12 +65,12 @@ int TreeDtor(Tree *tree, Node *root)
 
 Node *AddNode(Tree *tree, Node *tree_node, char *val, PlacePref pref)
 {
-    ASSERT(val, return NULL);
-
     TREE_VERIFICATION(tree, NULL);
 
+    ASSERT(val, return NULL);
+
     ASSERT(tree_node, return NULL);
-    ASSERT(tree_node == tree->root || TreeSearchParent(tree, tree_node), return NULL);
+    ASSERT(tree_node == tree->root || (TreeSearchParent(tree, tree_node) != NULL), return NULL);
 
     Node **next = &tree_node;
     while(*next)
@@ -100,7 +100,10 @@ Node *AddNode(Tree *tree, Node *tree_node, char *val, PlacePref pref)
         }
     }
 
-    EXEC_ASSERT((*next) = NodeCtor(val), return NULL);
+    (*next) = NodeCtor(val);
+
+    ASSERT((*next), return NULL);
+
     tree->size++;
 
     return (*next);
@@ -155,6 +158,7 @@ Stack TreeValPath(Tree *const tree, char *const val)
     ASSERT(val, return {});
 
     Stack path = StackCtor();
+
     ASSERT(path.data, return {});
 
     if(!SubTreeValPath(tree->root, val, &path))
@@ -219,6 +223,7 @@ static void SubTreeTextDump(Node *const tree_node, FILE *dump_file)
     fprintf(dump_file, "\n\t(");
 
     fprintf(dump_file, "<%s>", tree_node->data);
+
     SubTreeTextDump(tree_node->left , dump_file);
     SubTreeTextDump(tree_node->right, dump_file);
 
@@ -237,14 +242,14 @@ void TreeTextDump(Tree *const tree, FILE *dump_file)
                            "\tsize: %zu\n", tree, tree->root, tree->size);
     }
 
-    ASSERT(tree->root, return);
+    if(!tree->root) return;
 
     SubTreeTextDump(tree->root, dump_file);
     fprintf(dump_file, "\n\n");
 }
 
 
-static void DotGraphCtor(Node *const node, Node *const node_next, const char *direction, FILE *file)
+static void DotTreeCtor(Node *const node, Node *const node_next, const char *direction, FILE *file)
 {
     if(!node_next) return;
 
@@ -253,8 +258,8 @@ static void DotGraphCtor(Node *const node, Node *const node_next, const char *di
 
     fprintf(file, "node%p:<%s>:s -> node%p:<data>:n;\n", node, direction, node_next);
 
-    DotGraphCtor(node_next, node_next->left , "left" , file);
-    DotGraphCtor(node_next, node_next->right, "right", file);
+    DotTreeCtor(node_next, node_next->left , "left" , file);
+    DotTreeCtor(node_next, node_next->right, "right", file);
 }
 
 void TreeDot(Tree *const tree, const char *png_file_name)
@@ -275,9 +280,8 @@ void TreeDot(Tree *const tree, const char *png_file_name)
 
     fprintf(dot_file, "node%p[label = \"{<data> %s | {<left> Nein | <right> Ja}}\"; fillcolor = \"orchid\"]};\n",
                                                                                     tree->root, tree->root->data);
-
-    DotGraphCtor(tree->root, tree->root->left , "left" , dot_file);
-    DotGraphCtor(tree->root, tree->root->right, "right", dot_file);
+    DotTreeCtor(tree->root, tree->root->left , "left" , dot_file);
+    DotTreeCtor(tree->root, tree->root->right, "right", dot_file);
 
     fprintf(dot_file, "}\n");
 
@@ -327,17 +331,29 @@ static Node *ReadSubTree(FILE *file, size_t *counter)
 
             ASSERT(ch == '<', return NULL);
 
-            fscanf(file, " %[^>]%*c", data);
+            bool is_scaned = fscanf(file, " %[^>]%*c", data);
+
+            if(!is_scaned)
+            {
+                LOG("Invalid data.\n");
+
+                return NULL;
+            }
 
             Node *left  = ReadSubTree(file, counter);
             Node *right = ReadSubTree(file, counter);
 
             fscanf(file, " %c", &ch);
 
-            ASSERT(ch == ')', LOG("Ivalid data.\n");
-                              free(left );
-                              free(right);
-                              return NULL);
+            if(ch != ')')
+            {
+                LOG("Invalid data.\n");
+
+                free(left );
+                free(right);
+
+                return NULL;
+            }
 
             return NodeCtor(data, left, right);
         }
@@ -374,6 +390,7 @@ Tree ReadTree(const char *const file_name)
 static void TreeSizeValidation(Tree *const tree, Node *const tree_node, size_t *counter)
 {
     if(!tree_node || (*counter) >= tree->size) return;
+
     (*counter)++;
 
     TreeSizeValidation(tree, tree_node->left , counter);

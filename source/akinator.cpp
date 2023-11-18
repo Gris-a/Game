@@ -16,7 +16,13 @@ static bool ProcessingYesNoAnswer(const char *message)
         printf("%s", message);
 
         scanf("%s", ans);
-        if(ans[1] != '\0') {printf("Try again.\n"); continue;}
+
+        if(ans[1] != '\0')
+        {
+            printf("Try again.\n");
+
+            continue;
+        }
 
         switch(tolower(ans[0]))
         {
@@ -44,11 +50,9 @@ static void Quit(Tree *tree)
     if(ProcessingYesNoAnswer("Do you want to save your progress?[Y/n]: "))
     {
         char file_name[MAX_FILE_NAME_LEN] = {};
-        time_t cur_time = time(NULL);
 
-        sprintf(file_name, "data/saved/data_%s", ctime(&cur_time));
-        file_name[strlen(file_name) - 1] = '\0';
-        strcat(file_name, ".txt");
+        time_t cur_time = time(NULL);
+        snprintf(file_name, MAX_FILE_NAME_LEN - 1, "data/saved/data_%s.txt", ctime(&cur_time));
 
         FILE *db_file = fopen(file_name, "wb");
         ASSERT(db_file, return);
@@ -98,8 +102,8 @@ static void AddAnswer(Tree *tree, Node *prev_answer)
     printf("What is correct answer then?\n");
     scanf(" %[^\n]", ans);
 
-    EXEC_ASSERT(AddNode(tree, prev_answer, prev_answer->data, LEFT ), return);
-    EXEC_ASSERT(AddNode(tree, prev_answer, ans              , RIGHT), return);
+    AddNode(tree, prev_answer, prev_answer->data, LEFT );
+    AddNode(tree, prev_answer, ans              , RIGHT);
 
     printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, prev_answer->data);
     scanf(" %[^\n]", ans);
@@ -269,6 +273,7 @@ void Akinator(const char *const data_base)
         printf("[G] - Guess, [T] - Tree, [D] - Definition, [C] - compare, [Q] - Quit\n");
 
         scanf("%s", ans);
+
         if(ans[1] != '\0') {printf("Try again.\n"); continue;}
 
         switch(tolower(ans[0]))
