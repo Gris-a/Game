@@ -5,11 +5,11 @@
 
 #include "log.h"
 #include "stack.h"
-#include "general.h"
+#include "constants.h"
 
 struct Node
 {
-    char data[MAX_DATA_LEN];
+    char *data;
 
     Node *left;
     Node *right;
@@ -48,15 +48,17 @@ Tree TreeCtor(char *const init_val);
 
 int TreeDtor(Tree *tree, Node *root);
 
-Node *AddNode(Tree *tree, Node *tree_node, char *const val, PlacePref pref = AUTO);
+Node *AddNode(Tree *tree, Node *tree_node, const char *const val, PlacePref pref = AUTO);
 
-Node *TreeSearchVal(Tree *const tree, char *const val);
+Node *TreeSearchVal(Tree *const tree, const char *const val);
 
-Stack TreeValPath(Tree *const tree, char *const val);
+Stack TreePath(Tree *const tree, const char *const val);
 
 Node *TreeSearchParent(Tree *const tree, Node *const search_node);
 
-Node *NodeCtor(char *const val, Node *const left = NULL, Node *const right = NULL);
+Node *NodeCtor(const char *const val, Node *const left = NULL, Node *const right = NULL);
+
+void NodeDtor(Node *node);
 
 void TreeTextDump(Tree *const tree, FILE *dump_file = LOG_FILE);
 

@@ -11,11 +11,14 @@ static bool ProcessingYesNoAnswer(const char *message)
 {
     char ans[MAX_SHORT_ANS_LEN] = {};
 
+    char fmt[FMT_STR_LEN] = {};
+    sprintf(fmt, "%%%ds", MAX_SHORT_ANS_LEN - 1);
+
     while(true)
     {
         printf("%s", message);
 
-        scanf("%s", ans);
+        scanf(fmt, ans);
 
         if(ans[1] != '\0')
         {
@@ -49,12 +52,13 @@ static void Quit(Tree *tree)
 {
     if(ProcessingYesNoAnswer("Do you want to save your progress?[Y/n]: "))
     {
-        char file_name[MAX_FILE_NAME_LEN] = {};
+        char file_name[MAX_STR_LEN] = {};
 
         time_t cur_time = time(NULL);
-        snprintf(file_name, MAX_FILE_NAME_LEN - 1, "data/saved/data_%s.txt", ctime(&cur_time));
+        sprintf(file_name, "data/saved/data_%s.txt", ctime(&cur_time));
 
         FILE *db_file = fopen(file_name, "wb");
+
         ASSERT(db_file, return);
 
         TreeTextDump(tree, db_file);
@@ -74,13 +78,13 @@ static void ShowTree(Tree *tree)
 
 static Node *GetAnswer(Tree *const tree)
 {
-    char message[MAX_MESSAGE_LEN] = {};
+    char message[MAX_STR_LEN] = {};
 
     Node *cur_pos = tree->root;
 
     while(cur_pos->right != NULL)
     {
-        snprintf(message, MAX_MESSAGE_LEN - 1, "%s?[Y/n]: ", cur_pos->data);
+        sprintf(message, "%s?[Y/n]: ", cur_pos->data);
 
         if(ProcessingYesNoAnswer(message))
         {
@@ -99,25 +103,29 @@ static void AddAnswer(Tree *tree, Node *prev_answer)
 {
     char ans[MAX_DATA_LEN] = {};
 
+    char fmt[FMT_STR_LEN] = {};
+    sprintf(fmt, " %%%d[^\n]", MAX_DATA_LEN - 1);
+
     printf("What is correct answer then?\n");
-    scanf(" %[^\n]", ans);
+    scanf(fmt, ans);
 
     AddNode(tree, prev_answer, prev_answer->data, LEFT );
     AddNode(tree, prev_answer, ans              , RIGHT);
 
     printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, prev_answer->data);
-    scanf(" %[^\n]", ans);
+    scanf(fmt, ans);
 
-    strncpy(prev_answer->data, ans, MAX_DATA_LEN - 1);
+    free(prev_answer->data);
+    prev_answer->data = strdup(ans);
 }
 
 static void Game(Tree *tree)
 {
-    char message[MAX_MESSAGE_LEN * 2] = {};
+    char message[MAX_STR_LEN] = {};
 
     Node *answer = GetAnswer(tree);
 
-    snprintf(message, MAX_MESSAGE_LEN - 1, "Is \'%s\' the correct answer?[Y/n]: ", answer->data);
+    sprintf(message, "Is \'%s\' the correct answer?[Y/n]: ", answer->data);
 
     if(ProcessingYesNoAnswer(message))
     {
@@ -192,9 +200,13 @@ static void Definition(Tree *tree)
     printf("Definition of: ");
 
     char str[MAX_DATA_LEN] = {};
-    scanf(" %[^\n]", str);
 
-    Stack path = TreeValPath(tree, str);
+    char fmt[FMT_STR_LEN] = {};
+    sprintf(fmt, " %%%d[^\n]", MAX_DATA_LEN - 1);
+
+    scanf(fmt, str);
+
+    Stack path = TreePath(tree, str);
     if(!path.data)
     {
         printf("There is no %s in data base.\n", str);
@@ -213,32 +225,32 @@ static void Compare(Tree *tree)
     char str1[MAX_DATA_LEN] = {};
     char str2[MAX_DATA_LEN] = {};
 
-    printf(" First to compare: ");
-    scanf(" %[^\n]", str1);
+    char fmt[FMT_STR_LEN] = {};
+    sprintf(fmt, " %%%d[^\n]", MAX_DATA_LEN - 1);
 
-    Stack path1 = TreeValPath(tree, str1);
+    printf(" First to compare: ");
+    scanf(fmt, str1);
+
+    Stack path1 = TreePath(tree, str1);
     if(!path1.data)
     {
         printf("There is no %s in data base.\n", str1);
-
         return;
     }
 
     printf("Second to compare: ");
-    scanf(" %[^\n]", str2);
+    scanf(fmt, str2);
 
-    Stack path2 = TreeValPath(tree, str2);
+    Stack path2 = TreePath(tree, str2);
     if(!path2.data)
     {
         printf("There is no %s in data base.\n", str2);
 
         StackDtor(&path1);
-
         return;
     }
 
     Node *tree_pos = SimilarPropertiesDump(tree->root, &path1, &path2);
-
     if(tree_pos != tree->root)
     {
         printf(" - similarities of \'%s\' и \'%s\'.\n", str1, str2);
@@ -268,52 +280,41 @@ void Akinator(const char *const data_base)
 
     char ans[MAX_SHORT_ANS_LEN] = {};
 
+    char fmt[FMT_STR_LEN] = {};
+    sprintf(fmt, " %%%ds", MAX_SHORT_ANS_LEN - 1);
+
     while(true)
     {
         printf("[G] - Guess, [T] - Tree, [D] - Definition, [C] - compare, [Q] - Quit\n");
 
-        scanf("%s", ans);
+        scanf(fmt, ans);
 
-        if(ans[1] != '\0') {printf("Try again.\n"); continue;}
+        if(ans[1] != '\0')
+        {
+            printf("Try again.\n");
+            continue;
+        }
 
         switch(tolower(ans[0]))
         {
             case 'g':
-            {
                 Game(&tree);
-
                 continue;
-            }
             case 't':
-            {
                 ShowTree(&tree);
-
                 continue;
-            }
             case 'd':
-            {
                 Definition(&tree);
-
                 continue;
-            }
             case 'c':
-            {
                 Compare(&tree);
-
                 continue;
-            }
             case 'q':
-            {
                 Quit(&tree);
-
                 break;
-            }
             default:
-            {
                 printf("Try again.\n");
-
                 continue;
-            }
         }
 
         break;

@@ -11,7 +11,7 @@ akinator.out: obj/main.o obj/log.o obj/tree.o obj/akinator.o obj/stack.o
 obj/main.o: main.cpp include/log.h include/akinator.h
 	@g++ $(CFLAGS) -c $< -o $@
 
-obj/akinator.o: source/akinator.cpp include/tree.h include/log.h include/akinator.h include/stack.h
+obj/akinator.o: source/akinator.cpp include/tree.h include/log.h include/akinator.h include/stack.h include/constants.h
 	@g++ $(CFLAGS) -c $< -o $@
 
 obj/stack.o: source/stack.cpp include/stack.h include/log.h
@@ -20,5 +20,5 @@ obj/stack.o: source/stack.cpp include/stack.h include/log.h
 obj/log.o: source/log.cpp include/log.h
 	@g++ $(CFLAGS) -c $< -o $@
 
-obj/tree.o: source/tree.cpp include/tree.h include/log.h include/stack.h
+obj/tree.o: source/tree.cpp include/tree.h include/log.h include/stack.h include/constants.h
 	@g++ $(CFLAGS) -c $< -o $@
