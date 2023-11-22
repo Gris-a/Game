@@ -58,7 +58,7 @@ Node *TreeSearchParent(Tree *const tree, Node *const search_node);
 
 Node *NodeCtor(const char *const val, Node *const left = NULL, Node *const right = NULL);
 
-void NodeDtor(Node *node);
+int NodeDtor(Node *node);
 
 void TreeTextDump(Tree *const tree, FILE *dump_file = LOG_FILE);
 

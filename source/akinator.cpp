@@ -7,6 +7,17 @@
 #include "../include/akinator.h"
 #include "../include/tree.h"
 
+static void ClearStdin(void)
+{
+    int ch = 0;
+    while(ch != EOF)
+    {
+        ch = getchar();
+        if(ch == '\n') return;
+    }
+}
+
+
 static bool ProcessingYesNoAnswer(const char *message)
 {
     char ans[MAX_SHORT_ANS_LEN] = {};
@@ -23,6 +34,7 @@ static bool ProcessingYesNoAnswer(const char *message)
         if(ans[1] != '\0')
         {
             printf("Try again.\n");
+            ClearStdin();
 
             continue;
         }
@@ -108,12 +120,14 @@ static void AddAnswer(Tree *tree, Node *prev_answer)
 
     printf("What is correct answer then?\n");
     scanf(fmt, ans);
+    ClearStdin();
 
     AddNode(tree, prev_answer, prev_answer->data, LEFT );
     AddNode(tree, prev_answer, ans              , RIGHT);
 
     printf("what property distinguishes \'%s\' from \'%s\'?\n", ans, prev_answer->data);
     scanf(fmt, ans);
+    ClearStdin();
 
     free(prev_answer->data);
     prev_answer->data = strdup(ans);
@@ -205,6 +219,7 @@ static void Definition(Tree *tree)
     sprintf(fmt, " %%%d[^\n]", MAX_DATA_LEN - 1);
 
     scanf(fmt, str);
+    ClearStdin();
 
     Stack path = TreePath(tree, str);
     if(!path.data)
@@ -230,6 +245,7 @@ static void Compare(Tree *tree)
 
     printf(" First to compare: ");
     scanf(fmt, str1);
+    ClearStdin();
 
     Stack path1 = TreePath(tree, str1);
     if(!path1.data)
@@ -240,6 +256,7 @@ static void Compare(Tree *tree)
 
     printf("Second to compare: ");
     scanf(fmt, str2);
+    ClearStdin();
 
     Stack path2 = TreePath(tree, str2);
     if(!path2.data)
@@ -292,6 +309,8 @@ void Akinator(const char *const data_base)
         if(ans[1] != '\0')
         {
             printf("Try again.\n");
+            ClearStdin();
+
             continue;
         }
 

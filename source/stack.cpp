@@ -9,7 +9,6 @@ Stack StackCtor(const size_t capacity)
     if(capacity == 0)
     {
         LOG("Capacity should be greater than zero.\n");
-
         return {};
     }
 
@@ -17,12 +16,12 @@ Stack StackCtor(const size_t capacity)
 
     stack.capacity = capacity;
 
-    stack.data = (data_t *)calloc(capacity * sizeof(data_t), sizeof(char));
-
+    stack.data     = (data_t *)calloc(capacity * sizeof(data_t), sizeof(char));
     ASSERT(stack.data, return {});
 
     return stack;
 }
+
 
 int StackDtor(Stack *stack)
 {
@@ -38,12 +37,11 @@ int StackDtor(Stack *stack)
 }
 
 
-static int StackExpansion(Stack *stack)
+static int StackExpand(Stack *stack)
 {
     if(stack->size == stack->capacity)
     {
         data_t *data_r = (data_t *)realloc(stack->data, sizeof(data_t) * stack->capacity * 2);
-
         ASSERT(data_r, return EXIT_FAILURE);
 
         stack->capacity *= 2;
@@ -56,25 +54,11 @@ static int StackExpansion(Stack *stack)
     return EXIT_SUCCESS;
 }
 
-int PushStack(Stack *stack, const data_t val)
-{
-    STACK_VERIFICATION(stack, EXIT_FAILURE);
-
-    stack->data[stack->size] = val;
-    stack->size++;
-
-    int exit_status = StackExpansion(stack);
-
-    return exit_status;
-}
-
-
 static int StackShrink(Stack *stack)
 {
     if(stack->size * 4 == stack->capacity)
     {
         data_t *data_r = (data_t *)realloc(stack->data, sizeof(data_t) * stack->capacity / 2);
-
         ASSERT(data_r, return EXIT_FAILURE);
 
         stack->capacity /= 2;
@@ -85,6 +69,19 @@ static int StackShrink(Stack *stack)
     return EXIT_SUCCESS;
 }
 
+
+int PushStack(Stack *stack, const data_t val)
+{
+    STACK_VERIFICATION(stack, EXIT_FAILURE);
+
+    stack->data[stack->size] = val;
+    stack->size++;
+
+    int exit_status = StackExpand(stack);
+
+    return exit_status;
+}
+
 int PopStack(Stack *stack, data_t *ret_val)
 {
     STACK_VERIFICATION(stack, EXIT_FAILURE);
@@ -92,7 +89,6 @@ int PopStack(Stack *stack, data_t *ret_val)
     if(stack->size == 0)
     {
         LOG("Stack underflow.\n");
-
         return EXIT_FAILURE;
     }
 
@@ -105,6 +101,7 @@ int PopStack(Stack *stack, data_t *ret_val)
 
     return exit_status;
 }
+
 
 int ClearStack(Stack *stack)
 {
@@ -119,14 +116,16 @@ int ClearStack(Stack *stack)
     return exit_status;
 }
 
+
 void StackDump(Stack *stack)
 {
-    ASSERT(stack, return);
+    LOG("Stack[%p]:\n", stack);
 
-    LOG("Stack[%p]:       \n"
-        "\tsize     = %zu;\n"
+    if(!stack) return;
+
+    LOG("\tsize     = %zu;\n"
         "\tcapacity = %zu;\n"
-        "\tdata[%p]:      \n", stack, stack->size, stack->capacity, stack->data);
+        "\tdata[%p]:      \n", stack->size, stack->capacity, stack->data);
 
     if(!stack->data) return;
 
@@ -137,6 +136,7 @@ void StackDump(Stack *stack)
         LOG("[%3zu] = " DATA_FORMAT "\n", i, stack->data[i]);
     }
 }
+
 
 #ifdef PROTECT
 bool IsStackValid(Stack *stack)
